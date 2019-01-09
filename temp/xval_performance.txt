@@ -1,0 +1,274 @@
+The following is a measure of the performance of a parallelized version 
+of grid search cross validation which uses the following code in execution
+In each case the time shown is averaged over 5 runs
+
+q)\l jserver.q
+q)\l testing.q
+q)n:100				/ this is modified to increase the size of dataset
+q)x:flip value flip([]n?100f;asc n?100f)
+q)y:asc n?100f
+q)val:4
+q)i:.ml.xval.kfshuff[y;val]
+q)py:.p.import[`sklearn.linear_model][`:ElasticNet]
+q)dict:`alpha`l1_ratio!(0.75;0.25 0.5 0.75)
+q)swork val
+q)distgsearch[py;x;y;i;dict]~.ml.xval.gridsearch[x;y;i;py;dict]
+--->1b
+q)\t distgsearch[py;x;y;i;dict]
+q)\t .ml.xval.gridsearch[x;y;i;py;dict]
+
+n		|multiprocess t(ms)	|singleprocess t(ms)	|Ratio sp/mp	|
+----------------|-----------------------|-----------------------|---------------|
+100	        |1.44			|4.64			|3.04		|
+200		|1.80			|5.54			|3.0187		|
+500		|2.29			|6.65			|2.90		|
+1000		|2.94			|8.90			|3.027		|
+2000		|4.51			|13.30			|2.95		|
+4000		|7.26			|21.93			|3.016		|
+5000		|8.60			|26.20			|3.046		|
+5500		|27.07			|29.05			|1.07		|
+6000		|30.67			|31.74			|1.03		|
+7500		|34.5			|38.00			|1.10		|
+10000		|56.24			|49.22			|0.875		|
+20000		|96.17			|101.06			|0.952		|
+50000		|219			|255			|1.16		|
+100000		|424			|579			|1.37		|
+200000		|753			|1305			|1.73		|
+500000		|1523			|3617			|2.37		|
+1000000		|2713			|7564			|2.79		|
+2000000		|4886			|15494			|3.17		|
+5000000		|11326			|39655			|3.50		|
+10000000	|22320			|80308			|3.597		|
+20000000	|44629			|164810			|3.69		|
+50000000	|116790			|452683			|3.876		|	
+
+Following on from this a test of the time taken to execute the number of workers processes(n) opened for distibution of the n-folds averaged to the execution time for a single run;
+
+n		|Execution time (s)	|
+----------------|-----------------------|
+2		|1.81			|
+3		|2.26			|	
+4		|2.74			|
+5		|3.27			|
+6		|3.99			|
+7		|4.30			|
+8		|4.80			|
+9		|5.37			|
+10		|5.73			|
+11		|6.26			|
+12		|6.81			|
+20		|10.55			|
+40		|19.71			|
+75		|36.64			|
+100		|48.97			|
+150		|73.33			|
+200		|98.46			|
+
+To test if the large change in the ratio sp/mp seen in the first table was related to the application of the ElasticNet function is to 'blame' I split the data into a training and testing set with a consistent 80/20 split and increasing number of rows
+
+q)n:100
+q)x:flip value flip([]n?100f;asc n?100f)
+q)y:asc n?100f
+q)ttst:.ml.util.traintestsplit[x;y;0.2]
+q)enet:.p.import[`sklearn.linear_model][`:ElasticNet][]
+q)func:{enet[`:fit][x`xtrain;x`ytrain][`:score][x`xtrain;x`ytrain]}
+q)\t:1000 func[ttst]
+
+n		|Execution time(ms)	|
+----------------|-----------------------|
+100		|0.41			|
+200		|0.49			|
+500		|0.66			|
+1000		|0.94			|
+2000		|1.50			|
+5000		|3.25			|
+10000		|6.35			|
+20000		|12.51			|
+50000		|33.92			|
+100000		|76.49			|
+200000		|171.31			|
+500000		|467.64			|
+1000000		|975.4			|
+2000000		|1984.5			|
+5000000		|5212			|
+10000000	|10161			|
+20000000	|20816			|
+50000000	|55918			|
+
+/------------------------------------------------------------------------------------------------------\
+
+Benchmarking of peached cross validation
+
+n-slaves	|n-folds		|Execution time	(ms)	|
+----------------|-----------------------|-----------------------|
+0		|2			|294			|
+0		|3			|479			|
+0		|4			|615			|	
+0		|5			|728			|
+0		|6			|877			|	
+0		|7			|1037			|
+0		|8			|1194			|	
+0		|9			|1303			|	
+0		|10			|1499			|
+0		|11			|1677			|	
+0		|12			|1858			|
+0		|13			|1933			|	
+0		|14			|2103			|	
+0		|15			|2240			|
+0		|16			|2449			|
+1		|2			|266			|
+1		|3			|375			|
+1		|4			|506			|
+1		|5			|643			|
+1		|6			|763			|
+1		|7			|910			|	
+1		|8			|1043			|
+1		|9			|1161			|
+1		|10			|1285			|
+1		|11			|1406			|
+1		|12			|1564			|
+1		|13			|1660			|
+1		|14			|1797			|
+1		|15			|1936			|
+1		|16			|2053			|
+2		|2			|189			|
+2		|3			|333			|
+2		|4			|356			|
+2		|5			|505			|
+2		|6			|521			|
+2		|7			|679			|	
+2		|8			|697			|
+2		|9			|844			|
+2		|10			|864			|
+2		|11			|1012			|
+2		|12			|1046			|
+2		|13			|1183			|
+2		|14			|1224			|
+2		|15			|1353			|
+2		|16			|1373			|
+4		|2			|190			|
+4		|3			|344			|
+4		|4			|424			|
+4		|5			|532			|
+4		|6			|602			|
+4		|7			|734			|	
+4		|8			|811			|
+4		|9			|872			|
+4		|10			|987			|
+4		|11			|1097			|
+4		|12			|1202			|
+4		|13			|1243			|
+4		|14			|1335			|
+4		|15			|1464			|
+4		|16			|1563			|
+6		|2			|188			|
+6		|4			|403			|
+6		|8			|872			|
+6		|16			|1597			|
+8		|2			|190			|
+8		|3			|333			|
+8		|4			|440			|
+8		|5			|569			|
+8		|6			|654			|
+8		|7			|790			|	
+8		|8			|853			|
+8		|9			|966			|
+8		|10			|1047			|
+8		|11			|1157			|
+8		|12			|1246			|
+8		|13			|1296			|
+8		|14			|1365			|
+8		|15			|1446			|
+8		|16			|1529			|
+
+/----------------------------------------------------------------------------------------------------\
+
+This is a trimmed down repetition of the execution seen above for the ratio of single slave process to multi slave process execution time vs increasing table size however done for various numbers of processes and in this case 10 folds rather than the 4 used previously. The timings are done for 1,2,3,5,8,10 slave processes
+
+1. Using 2 slave processes 
+n		|multiprocess t(ms)	|singleprocess t(ms)	|Ratio sp/mp	|
+----------------|-----------------------|-----------------------|---------------|
+100	        |8.35			|13.9			|1.66		|
+1000		|12.53			|24.3			|1.939		|
+5000		|47.76			|71.3			|1.493		|
+10000		|90.69			|134.1			|1.478		|
+50000		|449.6			|651			|1.447		|
+100000		|883.3			|1284.5			|1.454		|
+500000		|4466.2			|6756.9			|1.513		|
+1000000		|8563			|13720			|1.602		|
+5000000		|39162			|70268			|1.794		|
+10000000	|76267			|141518			|1.8555		|	
+
+2. Using 3 slave processes 
+n		|multiprocess t(ms)	|singleprocess t(ms)	|Ratio sp/mp	|
+----------------|-----------------------|-----------------------|---------------|
+100	        |5.62			|13.9			|2.47		|
+1000		|10.03			|24.3			|2.42		|
+5000		|49.94			|71.3			|1.43		|
+10000		|129.87			|134.1			|1.03		|
+50000		|533.6			|651			|1.22		|
+100000		|949.4			|1284.5			|1.35		|
+500000		|3958.3			|6756.9			|1.71		|
+1000000		|7142			|13720			|1.92		|
+5000000		|32830			|70268			|2.14		|
+10000000	|64572			|141518			|2.19		|
+
+3. Using 5 slave processes 
+n		|multiprocess t(ms)	|singleprocess t(ms)	|Ratio sp/mp	|
+----------------|-----------------------|-----------------------|---------------|
+100	        |4.59			|13.9			|3.03		|
+1000		|8.80			|24.3			|2.76		|
+5000		|60.60			|71.3			|1.18		|
+10000		|143.32			|134.1			|0.94		|
+50000		|571.4			|651			|1.14		|
+100000		|1057.7			|1284.5			|1.21		|
+500000		|3476.1			|6756.9			|1.94		|
+1000000		|5893			|13720			|2.33		|
+5000000		|24720			|70268			|2.84		|
+10000000	|46796			|141518			|3.02		|
+
+3. Using 8 slave processes
+n		|multiprocess t(ms)	|singleprocess t(ms)	|Ratio sp/mp	|
+----------------|-----------------------|-----------------------|---------------|
+100	        |4.32			|13.9			|3.22		|
+1000		|7.29			|24.3			|3.33		|
+5000		|69.45			|71.3			|1.03		|
+10000		|181.14			|134.1			|0.74		|
+50000		|611.6			|651			|1.06		|
+100000		|1052.2			|1284.5			|1.22		|
+500000		|3372.6			|6756.9			|2.00		|
+1000000		|5805			|13720			|2.36		|
+5000000		|24001			|70268			|2.93		|
+10000000	|46992			|141518			|3.01		|
+
+4. Using 10 slave processes
+n		|multiprocess t(ms)	|singleprocess t(ms)	|Ratio sp/mp	|
+----------------|-----------------------|-----------------------|---------------|
+100	        |4.35			|13.9			|3.19		|
+1000		|7.71			|24.3			|3.15		|
+5000		|96.19			|71.3			|0.74		|
+10000		|197.56			|134.1			|0.68		|
+50000		|596.8			|651			|1.09		|
+100000		|1048.6			|1284.5			|1.23		|
+500000		|3291.1			|6756.9			|2.05		|
+1000000		|5425			|13720			|2.53		|
+5000000		|22692			|70268			|3.09		|
+10000000	|44922			|141518			|3.15		|
+
+The code for the above test was
+```q
+$ q -s -10
+q)\l peachxval.q
+q)\l ../testing.q
+q)workers[]
+q)n:100
+q)x:flip value flip([]n?100f;asc n?100f)
+q)y:asc n?100f
+q)i:.ml.kfshuff[y;10]
+q)dict:`alpha`l1_ratio!(0.75;0.25 0.5 0.75)
+q)py:.p.import[`sklearn.linear_model][`:ElasticNet]
+q)\t:100 xvalpd[x;y;i;dict;py]
+```
+
+n can then be modified and the lines defining x,y,i and the timing re-run to gain insights into the effect of increasing the size of the tables. 
+

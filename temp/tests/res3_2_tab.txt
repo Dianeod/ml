@@ -1,0 +1,24 @@
+data:get`:res3
+fnsel:{?[x;enlist (=;`slaves;y);0b;()]}
+slv1:fnsel[data;1]
+slv2:fnsel[data;2]
+slv3:fnsel[data;3]
+slv4:fnsel[data;4]
+slv5:fnsel[data;5]
+slv6:fnsel[data;6]
+slv7:fnsel[data;7]
+slv8:fnsel[data;8]
+slvs:`slv1`slv2`slv3`slv4`slv5`slv6`slv7`slv8
+tstsl2:raze{?[value x;enlist(=;y;z);0b;()]}[;`slaves;2]each slvs
+tstsl4:raze{?[value x;enlist(=;y;z);0b;()]}[;`slaves;4]each slvs
+tstsl6:raze{?[value x;enlist(=;y;z);0b;()]}[;`slaves;6]each slvs
+tstsl8:raze{?[value x;enlist(=;y;z);0b;()]}[;`slaves;8]each slvs
+datatest:raze{?[value x;enlist(=;y;z);0b;()]}[;`slaves;1]each slvs
+fnupd:{![`datatest;();0b;(enlist x)!enlist y`time]}
+fnupd[`n2;`tstsl2]
+fnupd[`n4;`tstsl4]
+fnupd[`n6;`tstsl6]
+fnupd[`n8;`tstsl8]
+update n1:datatest`time from `datatest
+delete slaves,time from `datatest
+data:`n`n1`n2`n4`n6`n8 xcols datatest
